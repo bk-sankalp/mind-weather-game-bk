@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Weather - A Game About Inner Storms</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .game-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        .controls {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            margin: 10px 5px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* Modal Popup Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .modal-content p {
+            color: #333;
+            margin: 20px 0;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .modal-btn-yes {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn-yes:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-btn-no {
+            background: #e9ecef;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+
+        .modal-btn-no:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .story-message {
+            padding: 20px;
+            background: #f0f4ff;
+            color: #333;
+            text-align: center;
+            font-style: italic;
+            border-top: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .story-message.show {
+            display: block;
+        }
+
+        .intensity-bar {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .intensity-bar.show {
+            display: block;
+        }
+
+        .intensity-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🌪️ Mind Weather</h1>
+            <p>A reflective journey through inner storms</p>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="story-message" id="storyMessage">
+            <p id="storyText"></p>
+        </div>
+
+        <div class="intensity-bar" id="intensityBar">
+            <div class="intensity-label">Storm Intensity: <span id="intensityValue">0%</span></div>
+            <div class="bar">
+                <div class="bar-fill" id="barFill"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-start" id="startBtn">Start Game</button>
+            <button class="btn btn-reset" id="resetBtn">Reset</button>
+        </div>
+    </div>
+
+    <!-- Modal Popup -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <h2>🌪️ A Moment of Reflection</h2>
+            <p id="questionText">Do you also experience this storm of self doubt?</p>
+            <p style="font-size: 0.9em; color: #666; margin-top: 15px;">
+                Take a moment to consider your inner weather...
+            </p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-yes" onclick="answerQuestion(true)">Yes, I Do</button>
+                <button class="modal-btn modal-btn-no" onclick="answerQuestion(false)">Not Right Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const modal = document.getElementById('questionModal');
+        const storyMessage = document.getElementById('storyMessage');
+        const intensityBar = document.getElementById('intensityBar');
+        const barFill = document.getElementById('barFill');
+        const intensityValue = document.getElementById('intensityValue');
+
+        // Resize canvas
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        const game = {
+            phase: 'idle', // idle, walking, storming, questioning, escaping
+            playerX: 50,
+            playerY: 0,
+            stormIntensity: 0,
+            time: 0,
+            walkingComplete: false,
+            stormActive: false,
+            stormPeakTime: 0,
+            selectedAnswer: null
+        };
+
+        // Player object
+        const player = {
+            x: 100,
+            y: canvas.height - 150,
+            width: 40,
+            height: 60,
+            legOffset: 0
+        };
+
+        // Draw player
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            // Add glow effect when in storm for visibility
+            if (game.stormActive && game.stormIntensity > 0.3) {
+                ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
+                ctx.shadowBlur = 20 + game.stormIntensity * 10;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
+            // Apply wobble when in storm - much more intense at high intensity
+            if (game.stormActive) {
+                const wobbleAmount = game.stormIntensity > 0.8 ? 
+                    Math.sin(game.time * 0.15) * 8 + Math.cos(game.time * 0.08) * 5 :
+                    Math.sin(game.time * 0.1) * (game.stormIntensity * 0.5);
+                ctx.rotate(wobbleAmount * 0.02);
+                
+                // Add horizontal shake
+                if (game.stormIntensity > 0.8) {
+                    ctx.translate(Math.sin(game.time * 0.2) * (game.stormIntensity * 8), 0);
+                }
+            }
+
+            // Head
+            ctx.fillStyle = '#f4a460';
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillStyle = '#4169e1';
+            ctx.fillRect(-8, 12, 16, 25);
+
+            // Arms - flailing at high intensity
+            ctx.fillStyle = '#f4a460';
+            const armSwing = game.stormIntensity > 0.8 ? 
+                Math.sin(game.time * 0.15) * 25 :
+                Math.sin(game.time * 0.05) * 15 * (game.stormActive ? 2 : 1);
+            // Left arm
+            ctx.save();
+            ctx.translate(-11, 24);
+            ctx.rotate(armSwing * 0.05);
+            ctx.fillRect(0, 0, 7, 20);
+            ctx.restore();
+            
+            // Right arm
+            ctx.save();
+            ctx.translate(11, 24);
+            ctx.rotate(-armSwing * 0.05);
+            ctx.fillRect(-7, 0, 7, 20);
+            ctx.restore();
+
+            // Legs - more intense movement
+            const legSwing = game.stormIntensity > 0.8 ? 
+                Math.sin(game.time * 0.15) * 15 :
+                Math.sin(game.time * 0.05) * 10;
+            ctx.fillStyle = '#333';
+            // Left leg
+            ctx.fillRect(-5, 37, 6, 20 + legSwing);
+            // Right leg
+            ctx.fillRect(-1, 37, 6, 20 - legSwing);
+
+            // Face - shows distress in high intensity storm
+            ctx.fillStyle = '#000';
+            if (game.stormIntensity < 0.5) {
+                // Happy/Normal
+                ctx.beginPath();
+                ctx.arc(-5, -2, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(5, -2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Stressed/Struggling - X eyes
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-7, -4);
+                ctx.lineTo(-3, 0);
+                ctx.moveTo(-3, -4);
+                ctx.lineTo(-7, 0);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(3, -4);
+                ctx.lineTo(7, 0);
+                ctx.moveTo(7, -4);
+                ctx.lineTo(3, 0);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw storm effects
+        function drawStorm() {
+            if (game.stormIntensity < 0.1) return;
+
+            // Storm clouds - less opaque so player is visible
+            ctx.fillStyle = `rgba(100, 100, 120, ${game.stormIntensity * 0.3})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Rain - more intense
+            for (let i = 0; i < game.stormIntensity * 150; i++) {
+                const x = (game.time * 3 + i * 7) % canvas.width;
+                const y = (game.time * 4 + i * 5) % canvas.height;
+                ctx.strokeStyle = `rgba(200, 200, 255, ${game.stormIntensity * 0.6})`;
+                ctx.lineWidth = Math.max(1, game.stormIntensity * 3);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 10, y + 15);
+                ctx.stroke();
+            }
+
+            // Wind effect - stronger
+            if (game.stormIntensity > 0.3) {
+                for (let i = 0; i < game.stormIntensity * 80; i++) {
+                    const x = (game.time * 8 + i * 10) % canvas.width;
+                    const y = Math.sin(i) * 100 + canvas.height / 2;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${game.stormIntensity * 0.4})`;
+                    ctx.lineWidth = Math.max(2, game.stormIntensity * 4);
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + 30, y);
+                    ctx.stroke();
+                }
+            }
+
+            // Tornado/Vortex - much more dramatic at high intensity
+            if (game.stormIntensity > 0.5) {
+                ctx.save();
+                ctx.globalAlpha = Math.min(game.stormIntensity * 0.5, 0.7);
+                ctx.strokeStyle = `rgba(150, 150, 200, ${game.stormIntensity})`;
+                ctx.lineWidth = Math.max(2, game.stormIntensity * 5);
+                
+                const numCircles = Math.ceil(game.stormIntensity * 8);
+                for (let i = 0; i < numCircles; i++) {
+                    const radius = 30 + i * 20;
+                    const rotation = (game.time * 0.05 * game.stormIntensity) + i * (Math.PI / numCircles);
+                    ctx.beginPath();
+                    ctx.arc(canvas.width / 2 + Math.cos(rotation) * 10, 
+                           canvas.height / 2 - 50 + Math.sin(rotation) * 10, 
+                           radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Tornado funnel shape at extreme intensity
+                if (game.stormIntensity > 0.85) {
+                    ctx.fillStyle = `rgba(150, 150, 200, ${(game.stormIntensity - 0.85) * 2})`;
+                    ctx.beginPath();
+                    ctx.moveTo(canvas.width / 2 - 80, canvas.height / 2 - 100);
+                    ctx.lineTo(canvas.width / 2 + 80, canvas.height / 2 - 100);
+                    ctx.lineTo(canvas.width / 2 + 30, canvas.height / 2 + 100);
+                    ctx.lineTo(canvas.width / 2 - 30, canvas.height / 2 + 100);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+
+            // Lightning flashes at peak intensity
+            if (game.stormIntensity > 0.85 && Math.random() < game.stormIntensity * 0.05) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Draw background
+        function drawBackground() {
+            // Sky
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (game.stormIntensity < 0.3) {
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(1, '#E0F6FF');
+            } else {
+                gradient.addColorStop(0, '#696969');
+                gradient.addColorStop(1, '#A9A9A9');
+            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ground
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+        }
+
+        // Update game state
+        function updateGame() {
+            game.time++;
+
+            if (game.phase === 'walking') {
+                // Player walks across screen
+                player.x += 2;
+                
+                // Stop player at center-right of screen and transition to storm
+                if (player.x > canvas.width * 0.6) {
+                    game.phase = 'storming';
+                    game.walkingComplete = true;
+                    player.x = canvas.width * 0.55; // Keep player visible
+                }
+            }
+
+            if (game.phase === 'storming') {
+                // Increase storm intensity to peak
+                if (game.stormIntensity < 1) {
+                    game.stormIntensity = Math.min(1, game.stormIntensity + 0.008);
+                } else {
+                    // Track peak intensity time
+                    if (game.stormPeakTime === 0) {
+                        game.stormPeakTime = game.time;
+                    }
+                }
+                
+                game.stormActive = true;
+
+                // Update intensity bar
+                intensityValue.textContent = Math.floor(game.stormIntensity * 100) + '%';
+                barFill.style.width = (game.stormIntensity * 100) + '%';
+
+                // Show pop-up after 10 seconds of struggling (600 frames at 60fps)
+                const timeSincePeak = game.time - game.stormPeakTime;
+                if (game.stormIntensity >= 1 && timeSincePeak >= 600 && !game.questionAsked) {
+                    game.questionAsked = true;
+                    showQuestion();
+                }
+            }
+
+            if (game.phase === 'escaping') {
+                // Player moves forward out of the storm
+                player.x += 3;
+                
+                // Decrease storm intensity as player escapes
+                game.stormIntensity = Math.max(0, game.stormIntensity - 0.02);
+                
+                // Update intensity bar
+                intensityValue.textContent = Math.floor(game.stormIntensity * 100) + '%';
+                barFill.style.width = (game.stormIntensity * 100) + '%';
+                
+                // End game when player exits
+                if (player.x > canvas.width + 50 || game.stormIntensity <= 0) {
+                    game.phase = 'idle';
+                    startBtn.disabled = false;
+                    intensityBar.classList.remove('show');
+                    storyMessage.classList.remove('show');
+                }
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            updateGame();
+            drawBackground();
+            drawStorm();
+            drawPlayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        function startGame() {
+            game.phase = 'walking';
+            game.stormIntensity = 0;
+            game.time = 0;
+            game.stormPeakTime = 0;
+            game.walkingComplete = false;
+            game.stormActive = false;
+            game.questionAsked = false;
+            game.selectedAnswer = null;
+            player.x = -50;
+            
+            startBtn.disabled = true;
+            intensityBar.classList.add('show');
+            storyMessage.classList.remove('show');
+            modal.classList.remove('show');
+        }
+
+        // Reset game
+        function resetGame() {
+            game.phase = 'idle';
+            game.stormIntensity = 0;
+            game.time = 0;
+            game.stormPeakTime = 0;
+            game.selectedAnswer = null;
+            player.x = 100;
+            player.y = canvas.height - 150;
+            startBtn.disabled = false;
+            intensityBar.classList.remove('show');
+            storyMessage.classList.remove('show');
+            modal.classList.remove('show');
+            
+            // Redraw
+            drawBackground();
+            drawPlayer();
+        }
+
+        // Show question modal
+        function showQuestion() {
+            modal.classList.add('show');
+        }
+
+        // Answer question
+        function answerQuestion(answered) {
+            modal.classList.remove('show');
+            
+            let message = '';
+            if (answered) {
+                message = '💙 Thank you for sharing. You\'re not alone in this. Many people experience storms of self-doubt. Take a deep breath. This too shall pass.';
+                game.phase = 'idle';
+                startBtn.disabled = false;
+            } else {
+                message = '✨ That\'s good to hear! Moving forward, leaving the storm behind...';
+                game.phase = 'escaping';
+                game.selectedAnswer = 'no';
+            }
+            
+            document.getElementById('storyText').textContent = message;
+            storyMessage.classList.add('show');
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', resetGame);
+
+        // Initial draw
+        drawBackground();
+        drawPlayer();
+
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>
